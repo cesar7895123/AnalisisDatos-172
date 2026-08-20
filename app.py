@@ -42,8 +42,15 @@ st.markdown("Visualización interactiva e informe generado por IA (`openai/gpt-o
 @st.cache_data
 def load_data(file):
     df = pd.read_csv(file)
+    
+    # Conversión de EDAD_VEHICULO
     if "EDAD_VEHICULO" in df.columns:
         df["EDAD_VEHICULO"] = pd.to_numeric(df["EDAD_VEHICULO"], errors='coerce')
+        
+    # Conversión de FECHA_ACCIDENTE a datetime
+    if "FECHA_ACCIDENTE" in df.columns:
+        df["FECHA_ACCIDENTE"] = pd.to_datetime(df["FECHA_ACCIDENTE"], errors='coerce')
+        
     return df
 
 # Función para generar informe con Groq
@@ -111,14 +118,36 @@ if uploaded_file is not None:
     # Filtros laterales dinámicos
     st.sidebar.subheader("🎯 Filtros Dinámicos")
     
-    deptos = ["Todos"] + list(df["DEPARTAMENTO_ACCIDENTE"].dropna().unique())
+    # --- FILTRO 1: INTERVALO DE FECHAS ---
+    df_filtered = df.copy()
+    
+    if "FECHA_ACCIDENTE" in df.columns and not df["FECHA_ACCIDENTE"].dropna().empty:
+        min_date = df["FECHA_ACCIDENTE"].min().date()
+        max_date = df["FECHA_ACCIDENTE"].max().date()
+        
+        date_range = st.sidebar.date_input(
+            "Rango de Fechas:",
+            value=(min_date, max_date),
+            min_value=min_date,
+            max_value=max_date
+        )
+        
+        # Validación para asegurar que el usuario haya seleccionado ambos extremos (inicio y fin)
+        if isinstance(date_range, tuple) and len(date_range) == 2:
+            start_date, end_date = date_range
+            df_filtered = df_filtered[
+                (df_filtered["FECHA_ACCIDENTE"].dt.date >= start_date) & 
+                (df_filtered["FECHA_ACCIDENTE"].dt.date <= end_date)
+            ]
+    
+    # --- FILTRO 2: DEPARTAMENTO ---
+    deptos = ["Todos"] + list(df_filtered["DEPARTAMENTO_ACCIDENTE"].dropna().unique())
     selected_depto = st.sidebar.selectbox("Departamento:", deptos)
     
     if selected_depto != "Todos":
-        df_filtered = df[df["DEPARTAMENTO_ACCIDENTE"] == selected_depto]
-    else:
-        df_filtered = df.copy()
+        df_filtered = df_filtered[df_filtered["DEPARTAMENTO_ACCIDENTE"] == selected_depto]
 
+    # --- FILTRO 3: GRAVEDAD ---
     gravedades = ["Todas"] + list(df_filtered["GRAVEDAD_ACCIDENTE"].dropna().unique())
     selected_gravedad = st.sidebar.selectbox("Gravedad del Accidente:", gravedades)
     
@@ -222,7 +251,11 @@ if uploaded_file is not None:
                     dist_tipos = df_tipo.head(5).to_dict(orient="records")
                     dist_gravedad = df_gravedad.to_dict(orient="records")
                     
+                    # Incluimos el rango de fechas actual en la carga útil enviada a la IA
+                    rango_fechas_str = f"{start_date} a {end_date}" if 'start_date' in locals() else "Sin filtro"
+
                     resumen_payload = {
+                        "rango_fechas_filtro": rango_fechas_str,
                         "departamento_filtro": selected_depto,
                         "gravedad_filtro": selected_gravedad,
                         "total_accidentes": len(df_filtered),
