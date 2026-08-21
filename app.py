@@ -32,6 +32,34 @@ st.markdown("""
         margin-bottom: 15px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+    .chat-message {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: flex;
+        gap: 10px;
+    }
+    .chat-message.user {
+        background-color: #e3f2fd;
+        justify-content: flex-end;
+    }
+    .chat-message.assistant {
+        background-color: #f5f5f5;
+        justify-content: flex-start;
+    }
+    .chat-message-content {
+        max-width: 80%;
+        padding: 10px 15px;
+        border-radius: 6px;
+    }
+    .chat-message.user .chat-message-content {
+        background-color: #2196F3;
+        color: white;
+    }
+    .chat-message.assistant .chat-message-content {
+        background-color: #e0e0e0;
+        color: black;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -100,6 +128,41 @@ def generar_informe_groq(groq_api_key, datos_resumen, num_insights):
     )
     
     return json.loads(response.choices[0].message.content)
+
+# Función para chat interactivo sobre datos
+def chat_con_datos(groq_api_key, pregunta_usuario, datos_resumen):
+    """
+    Realiza una consulta al modelo Groq sobre los datos filtrados.
+    """
+    client = Groq(api_key=groq_api_key)
+    
+    system_prompt = (
+        "Eres un experto analista de datos de accidentes de tránsito. "
+        "Tienes acceso a un resumen de datos sobre accidentes filtrados. "
+        "Responde de manera clara, concisa y fundamentada en los datos proporcionados. "
+        "Si la pregunta no está relacionada con los datos, indícalo amablemente."
+    )
+    
+    context_prompt = f"""
+    Contexto - Datos disponibles para análisis:
+    {json.dumps(datos_resumen, ensure_ascii=False, indent=2)}
+    
+    Pregunta del usuario: {pregunta_usuario}
+    
+    Analiza la pregunta en relación con los datos disponibles y proporciona una respuesta clara y fundamentada.
+    """
+
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": context_prompt}
+        ],
+        temperature=0.7,
+        max_tokens=1000
+    )
+    
+    return response.choices[0].message.content
 
 # Sidebar: Carga de archivo y Configuración de IA
 st.sidebar.header("📁 Carga de Datos")
@@ -284,6 +347,109 @@ if uploaded_file is not None:
                         
                 except Exception as e:
                     st.error(f"Error al conectar con la API de Groq: {str(e)}")
+
+    st.markdown("---")
+
+    # ============================================
+    # NUEVA SECCIÓN: CHATBOX INTERACTIVO
+    # ============================================
+    st.header("💬 Chat Interactivo - Interpreta tus Datos")
+    st.markdown("Haz preguntas sobre los datos filtrados y obtén respuestas basadas en IA.")
+
+    # Inicializar historial de chat en session state
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # Preparar datos de contexto para el chat
+    rango_fechas_str = f"{start_date} a {end_date}" if 'start_date' in locals() else "Sin filtro"
+    
+    top_marcas_tipos = top10_dim.to_dict(orient="records")
+    dist_tipos = df_tipo.head(5).to_dict(orient="records")
+    dist_gravedad = df_gravedad.to_dict(orient="records")
+    
+    datos_contexto = {
+        "rango_fechas_filtro": rango_fechas_str,
+        "departamento_filtro": selected_depto,
+        "gravedad_filtro": selected_gravedad,
+        "total_accidentes": len(df_filtered),
+        "edad_promedio_vehiculo": promedio_edad,
+        "marcas_distintas": df_filtered["MARCA_VEHICULO"].nunique(),
+        "tipos_vehiculo_distintos": df_filtered["TIPO_VEHICULO"].nunique(),
+        "top_marca_tipo_accidentes": top_marcas_tipos,
+        "tipos_vehiculo_frecuentes": dist_tipos,
+        "distribucion_gravedad": dist_gravedad
+    }
+
+    # Mostrar historial de chat
+    chat_container = st.container()
+    
+    with chat_container:
+        for message in st.session_state.chat_history:
+            if message["role"] == "user":
+                st.markdown(f"""
+                <div class="chat-message user">
+                    <div class="chat-message-content">
+                        <strong>Tú:</strong> {message["content"]}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class="chat-message assistant">
+                    <div class="chat-message-content">
+                        <strong>IA:</strong> {message["content"]}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # Input del usuario
+    col_input, col_button = st.columns([5, 1])
+    
+    with col_input:
+        user_question = st.text_input(
+            "Escribe tu pregunta aquí:",
+            placeholder="Ej: ¿Cuál es la marca de vehículo con más accidentes?",
+            key="user_input"
+        )
+    
+    with col_button:
+        send_button = st.button("📤 Enviar", use_container_width=True)
+
+    # Procesamiento de la pregunta
+    if send_button and user_question.strip():
+        if not groq_api_key:
+            st.error("Por favor, ingresa tu clave API de Groq en la barra lateral para usar el chat.")
+        else:
+            # Agregar pregunta del usuario al historial
+            st.session_state.chat_history.append({
+                "role": "user",
+                "content": user_question
+            })
+            
+            # Generar respuesta con IA
+            with st.spinner("🤔 Analizando tu pregunta..."):
+                try:
+                    respuesta_ia = chat_con_datos(groq_api_key, user_question, datos_contexto)
+                    
+                    # Agregar respuesta al historial
+                    st.session_state.chat_history.append({
+                        "role": "assistant",
+                        "content": respuesta_ia
+                    })
+                    
+                    # Recargar la página para mostrar el nuevo mensaje
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"Error al procesar tu pregunta: {str(e)}")
+    
+    # Botón para limpiar chat
+    if st.session_state.chat_history:
+        if st.button("🗑️ Limpiar Historial de Chat"):
+            st.session_state.chat_history = []
+            st.rerun()
+
+    st.markdown("---")
 
     with st.expander("🔍 Ver datos filtrados en tabla"):
         st.dataframe(df_filtered, use_container_width=True)
