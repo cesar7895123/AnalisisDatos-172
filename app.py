@@ -116,7 +116,7 @@ team_members = st.sidebar.text_area(
 )
 project_description = st.sidebar.text_area(
     "📝 Descripción general",
-    value=st.session_state.project_info.get("project_description", ""),
+    value=st.session_state.project_info.get("project_description", "El proyecto esta diseñado para visualizar el comportamiento de los accidentes de transito de la informacion publicada para la toma de decisiones para cada usuario interesado."),
     placeholder="Breve descripción del proyecto"
 )
 problem_statement = st.sidebar.text_area(
@@ -125,11 +125,11 @@ problem_statement = st.sidebar.text_area(
     placeholder="Qué problema aborda el proyecto"
 )
 
-technologies_default = ["Python", "Streamlit", "Pandas", "Plotly", "Groq", "OpenAI", "Docker", "Git"]
+technologies_default = ["Python", "Streamlit", "Pandas", "Plotly", "Groq", "Gemini", "OpenAI", "Docker", "GitHub"]
 technologies_selected = st.sidebar.multiselect(
     "🛠️ Tecnologías utilizadas",
     options=technologies_default,
-    default=st.session_state.project_info.get("technologies", ["Python", "Streamlit", "Pandas", "Plotly"])
+    default=st.session_state.project_info.get("technologies", ["Python", "Streamlit", "Pandas", "Plotly", "GitHub", "Gemini", "Groq"])
 )
 technologies_custom = st.sidebar.text_input("Añadir tecnologías (separadas por comas)")
 
