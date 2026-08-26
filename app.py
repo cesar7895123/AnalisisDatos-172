@@ -73,15 +73,37 @@ st.markdown("""
 # ---------------------------
 # Sección: Información del Proyecto (sidebar inputs)
 # ---------------------------
+PROJECT_INFO_FILE = "project_info.json"
+
 st.sidebar.header("📌 Información del Proyecto")
+# Cargar project_info desde archivo si existe
+if os.path.exists(PROJECT_INFO_FILE):
+    try:
+        with open(PROJECT_INFO_FILE, "r", encoding="utf-8") as f:
+            file_info = json.load(f)
+    except Exception:
+        file_info = None
+else:
+    file_info = None
+
 if "project_info" not in st.session_state:
-    st.session_state.project_info = {
-        "project_name": "Dashboard Analítico de Accidentes de Tránsito + IA (Groq)",
-        "team_members": "",
-        "project_description": "",
-        "problem_statement": "",
-        "technologies": ["Python", "Streamlit", "Pandas", "Plotly"]
-    }
+    # Valores por defecto (si existe archivo, usarlo)
+    if file_info:
+        st.session_state.project_info = {
+            "project_name": file_info.get("project_name", "Dashboard Analítico de Accidentes de Tránsito + IA (Groq)"),
+            "team_members": file_info.get("team_members", "Dora Milena Ocampo\nElena Rodriguez\nCesar Bedoya"),
+            "project_description": file_info.get("project_description", ""),
+            "problem_statement": file_info.get("problem_statement", ""),
+            "technologies": file_info.get("technologies", ["Python", "Streamlit", "Pandas", "Plotly"]) 
+        }
+    else:
+        st.session_state.project_info = {
+            "project_name": "Dashboard Analítico de Accidentes de Tránsito + IA (Groq)",
+            "team_members": "Dora Milena Ocampo\nElena Rodriguez\nCesar Bedoya",
+            "project_description": "",
+            "problem_statement": "",
+            "technologies": ["Python", "Streamlit", "Pandas", "Plotly"]
+        }
 
 project_name = st.sidebar.text_input(
     "🏷️ Nombre del proyecto",
@@ -121,6 +143,15 @@ st.session_state.project_info.update({
     "problem_statement": problem_statement,
     "technologies": technologies
 })
+
+# Botón para guardar la información en project_info.json
+if st.sidebar.button("💾 Guardar info del proyecto"):
+    try:
+        with open(PROJECT_INFO_FILE, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.project_info, f, ensure_ascii=False, indent=2)
+        st.sidebar.success(f"Información guardada en {PROJECT_INFO_FILE}")
+    except Exception as e:
+        st.sidebar.error(f"Error al guardar archivo: {e}")
 
 # Sidebar: Carga de archivo y Configuración de IA
 st.sidebar.header("📁 Carga de Datos")
