@@ -63,8 +63,32 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🚗 Dashboard Analítico de Accidentes de Tránsito + IA (Groq)")
-st.markdown("Visualización interactiva e informe generado por IA (`openai/gpt-oss-120b`).")
+# ---------------------------
+# Sección: Información del Proyecto
+# ---------------------------
+st.sidebar.header("📌 Información del Proyecto")
+project_name = st.sidebar.text_input("🏷️ Nombre del proyecto", value="Dashboard Analítico de Accidentes de Tránsito + IA (Groq)")
+team_members = st.sidebar.text_area("👥 Integrantes del equipo", placeholder="Ej: Juan Pérez - Analista\nMaría Ruiz - Ingeniera de Datos")
+project_description = st.sidebar.text_area("📝 Descripción general", placeholder="Breve descripción del proyecto")
+problem_statement = st.sidebar.text_area("🎯 Problema que resuelve", placeholder="Qué problema aborda el proyecto")
+technologies_default = ["Python", "Streamlit", "Pandas", "Plotly", "Groq", "OpenAI", "Docker", "Git"]
+technologies_selected = st.sidebar.multiselect("🛠️ Tecnologías utilizadas", options=technologies_default, default=["Python", "Streamlit", "Pandas", "Plotly"])
+technologies_custom = st.sidebar.text_input("Añadir tecnologías (separadas por comas)")
+technologies = technologies_selected + [t.strip() for t in technologies_custom.split(",") if t.strip()]
+
+# Mostrar resumen del proyecto en la cabecera principal
+st.title(f"🚗 {project_name if project_name else 'Dashboard Analítico de Accidentes de Tránsito'}")
+st.markdown(project_description if project_description else "Visualización interactiva e informe generado por IA (`openai/gpt-oss-120b`).")
+
+st.markdown(f"""
+<div class="report-card">
+  <h3>📌 {project_name}</h3>
+  <p><strong>👥 Integrantes:</strong><br>{team_members.replace('\n','<br>') if team_members else 'No especificado'}</p>
+  <p><strong>📝 Descripción general:</strong> {project_description if project_description else 'No especificado'}</p>
+  <p><strong>🎯 Problema que resuelve:</strong> {problem_statement if problem_statement else 'No especificado'}</p>
+  <p><strong>🛠️ Tecnologías utilizadas:</strong> {', '.join(technologies) if technologies else 'No especificado'}</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Carga de datos con caché
 @st.cache_data
