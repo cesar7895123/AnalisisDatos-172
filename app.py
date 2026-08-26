@@ -105,53 +105,7 @@ if "project_info" not in st.session_state:
             "technologies": ["Python", "Streamlit", "Pandas", "Plotly"]
         }
 
-project_name = st.sidebar.text_input(
-    "🏷️ Nombre del proyecto",
-    value=st.session_state.project_info.get("project_name", "Dashboard Analítico")
-)
-team_members = st.sidebar.text_area(
-    "👥 Integrantes del equipo",
-    value=st.session_state.project_info.get("team_members", ""),
-    placeholder="Ej: Juan Pérez - Analista\nMaría Ruiz - Ingeniera de Datos"
-)
-project_description = st.sidebar.text_area(
-    "📝 Descripción general",
-    value=st.session_state.project_info.get("project_description", "El proyecto esta diseñado para visualizar el comportamiento de los accidentes de transito de la informacion publicada para la toma de decisiones para cada usuario interesado."),
-    placeholder="Breve descripción del proyecto"
-)
-problem_statement = st.sidebar.text_area(
-    "🎯 Problema que resuelve",
-    value=st.session_state.project_info.get("problem_statement", ""),
-    placeholder="Qué problema aborda el proyecto"
-)
-
-technologies_default = ["Python", "Streamlit", "Pandas", "Plotly", "Groq", "Gemini", "OpenAI", "Docker", "GitHub"]
-technologies_selected = st.sidebar.multiselect(
-    "🛠️ Tecnologías utilizadas",
-    options=technologies_default,
-    default=st.session_state.project_info.get("technologies", ["Python", "Streamlit", "Pandas", "Plotly", "GitHub", "Gemini", "Groq"])
-)
-technologies_custom = st.sidebar.text_input("Añadir tecnologías (separadas por comas)")
-
-technologies = technologies_selected + [t.strip() for t in technologies_custom.split(",") if t.strip()]
-
-# Guardar cambios en session_state para persistencia durante la sesión
-st.session_state.project_info.update({
-    "project_name": project_name,
-    "team_members": team_members,
-    "project_description": project_description,
-    "problem_statement": problem_statement,
-    "technologies": technologies
-})
-
-# Botón para guardar la información en project_info.json
-if st.sidebar.button("💾 Guardar info del proyecto"):
-    try:
-        with open(PROJECT_INFO_FILE, "w", encoding="utf-8") as f:
-            json.dump(st.session_state.project_info, f, ensure_ascii=False, indent=2)
-        st.sidebar.success(f"Información guardada en {PROJECT_INFO_FILE}")
-    except Exception as e:
-        st.sidebar.error(f"Error al guardar archivo: {e}")
+# Note: Project info input fields have been intentionally removed to hide the options requested.
 
 # Sidebar: Carga de archivo y Configuración de IA
 st.sidebar.header("📁 Carga de Datos")
