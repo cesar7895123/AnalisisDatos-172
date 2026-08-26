@@ -32,6 +32,13 @@ st.markdown("""
         margin-bottom: 15px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+    .presentation-card {
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 12px;
+        margin-bottom: 18px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+    }
     .chat-message {
         padding: 12px;
         border-radius: 8px;
@@ -64,31 +71,66 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Sección: Información del Proyecto
+# Sección: Información del Proyecto (sidebar inputs)
 # ---------------------------
 st.sidebar.header("📌 Información del Proyecto")
-project_name = st.sidebar.text_input("🏷️ Nombre del proyecto", value="Dashboard Analítico de Accidentes de Tránsito + IA (Groq)")
-team_members = st.sidebar.text_area("👥 Integrantes del equipo", placeholder="Ej: Juan Pérez - Analista\nMaría Ruiz - Ingeniera de Datos")
-project_description = st.sidebar.text_area("📝 Descripción general", placeholder="Breve descripción del proyecto")
-problem_statement = st.sidebar.text_area("🎯 Problema que resuelve", placeholder="Qué problema aborda el proyecto")
+if "project_info" not in st.session_state:
+    st.session_state.project_info = {
+        "project_name": "Dashboard Analítico de Accidentes de Tránsito + IA (Groq)",
+        "team_members": "",
+        "project_description": "",
+        "problem_statement": "",
+        "technologies": ["Python", "Streamlit", "Pandas", "Plotly"]
+    }
+
+project_name = st.sidebar.text_input(
+    "🏷️ Nombre del proyecto",
+    value=st.session_state.project_info.get("project_name", "Dashboard Analítico")
+)
+team_members = st.sidebar.text_area(
+    "👥 Integrantes del equipo",
+    value=st.session_state.project_info.get("team_members", ""),
+    placeholder="Ej: Juan Pérez - Analista\nMaría Ruiz - Ingeniera de Datos"
+)
+project_description = st.sidebar.text_area(
+    "📝 Descripción general",
+    value=st.session_state.project_info.get("project_description", ""),
+    placeholder="Breve descripción del proyecto"
+)
+problem_statement = st.sidebar.text_area(
+    "🎯 Problema que resuelve",
+    value=st.session_state.project_info.get("problem_statement", ""),
+    placeholder="Qué problema aborda el proyecto"
+)
+
 technologies_default = ["Python", "Streamlit", "Pandas", "Plotly", "Groq", "OpenAI", "Docker", "Git"]
-technologies_selected = st.sidebar.multiselect("🛠️ Tecnologías utilizadas", options=technologies_default, default=["Python", "Streamlit", "Pandas", "Plotly"])
+technologies_selected = st.sidebar.multiselect(
+    "🛠️ Tecnologías utilizadas",
+    options=technologies_default,
+    default=st.session_state.project_info.get("technologies", ["Python", "Streamlit", "Pandas", "Plotly"])
+)
 technologies_custom = st.sidebar.text_input("Añadir tecnologías (separadas por comas)")
+
 technologies = technologies_selected + [t.strip() for t in technologies_custom.split(",") if t.strip()]
 
-# Mostrar resumen del proyecto en la cabecera principal
-st.title(f"🚗 {project_name if project_name else 'Dashboard Analítico de Accidentes de Tránsito'}")
-st.markdown(project_description if project_description else "Visualización interactiva e informe generado por IA (`openai/gpt-oss-120b`).")
+# Guardar cambios en session_state para persistencia durante la sesión
+st.session_state.project_info.update({
+    "project_name": project_name,
+    "team_members": team_members,
+    "project_description": project_description,
+    "problem_statement": problem_statement,
+    "technologies": technologies
+})
 
-st.markdown(f"""
-<div class="report-card">
-  <h3>📌 {project_name}</h3>
-  <p><strong>👥 Integrantes:</strong><br>{team_members.replace('\n','<br>') if team_members else 'No especificado'}</p>
-  <p><strong>📝 Descripción general:</strong> {project_description if project_description else 'No especificado'}</p>
-  <p><strong>🎯 Problema que resuelve:</strong> {problem_statement if problem_statement else 'No especificado'}</p>
-  <p><strong>🛠️ Tecnologías utilizadas:</strong> {', '.join(technologies) if technologies else 'No especificado'}</p>
-</div>
-""", unsafe_allow_html=True)
+# Sidebar: Carga de archivo y Configuración de IA
+st.sidebar.header("📁 Carga de Datos")
+uploaded_file = st.sidebar.file_uploader("Carga tu archivo CSV aquí", type=["csv"])
+
+st.sidebar.header("🤖 Configuración de IA (Groq)")
+groq_api_key_input = st.sidebar.text_input("Groq API Key", type="password", help="Obtén tu API Key en https://console.groq.com/")
+groq_api_key = groq_api_key_input or os.environ.get("GROQ_API_KEY", "")
+
+num_insights = st.sidebar.slider("Número de Insights a generar:", min_value=1, max_value=10, value=3)
 
 # Carga de datos con caché
 @st.cache_data
@@ -105,7 +147,7 @@ def load_data(file):
         
     return df
 
-# Función para generar informe con Groq
+# Funciones IA (sin cambios importantes)
 def generar_informe_groq(groq_api_key, datos_resumen, num_insights):
     client = Groq(api_key=groq_api_key)
     
@@ -153,11 +195,8 @@ def generar_informe_groq(groq_api_key, datos_resumen, num_insights):
     
     return json.loads(response.choices[0].message.content)
 
-# Función para chat interactivo sobre datos
+
 def chat_con_datos(groq_api_key, pregunta_usuario, datos_resumen):
-    """
-    Realiza una consulta al modelo Groq sobre los datos filtrados.
-    """
     client = Groq(api_key=groq_api_key)
     
     system_prompt = (
@@ -188,26 +227,49 @@ def chat_con_datos(groq_api_key, pregunta_usuario, datos_resumen):
     
     return response.choices[0].message.content
 
-# Sidebar: Carga de archivo y Configuración de IA
-st.sidebar.header("📁 Carga de Datos")
-uploaded_file = st.sidebar.file_uploader("Carga tu archivo CSV aquí", type=["csv"])
+# Crear pestañas principales para presentación y funcionalidades
+tabs = st.tabs(["Presentación", "Visualizaciones", "IA - Insights", "Chat", "Tabla de Datos"]) 
 
-st.sidebar.header("🤖 Configuración de IA (Groq)")
-groq_api_key_input = st.sidebar.text_input("Groq API Key", type="password", help="Obtén tu API Key en https://console.groq.com/")
-groq_api_key = groq_api_key_input or os.environ.get("GROQ_API_KEY", "")
+# Pestaña: Presentación (tipo slide/presentación)
+with tabs[0]:
+    st.markdown(f"""
+    <div class="presentation-card">
+      <h1>📌 {st.session_state.project_info.get('project_name')}</h1>
+      <h4>👥 Integrantes</h4>
+      <p>{st.session_state.project_info.get('team_members', 'No especificado').replace('\n','<br>')}</p>
+      <hr>
+      <h4>📝 Descripción general</h4>
+      <p>{st.session_state.project_info.get('project_description', 'No especificado')}</p>
+      <hr>
+      <h4>🎯 Problema que resuelve</h4>
+      <p>{st.session_state.project_info.get('problem_statement', 'No especificado')}</p>
+      <hr>
+      <h4>🛠️ Tecnologías utilizadas</h4>
+      <p>{', '.join(st.session_state.project_info.get('technologies', []))}</p>
+    </div>
+    
+    <p>Usa las demás pestañas para ver y analizar los datos, generar informes con IA y chatear con el asistente.</p>
+    """, unsafe_allow_html=True)
 
-num_insights = st.sidebar.slider("Número de Insights a generar:", min_value=1, max_value=10, value=3)
-
-if uploaded_file is not None:
+# Si no hay archivo cargado, mostramos aviso en las pestañas que dependan de datos
+if uploaded_file is None:
+    with tabs[1]:
+        st.info("📁 Por favor, carga tu archivo CSV desde la barra lateral para activar las visualizaciones.")
+    with tabs[2]:
+        st.info("📁 El generador de Insights requiere un archivo CSV cargado.")
+    with tabs[3]:
+        st.info("💬 El chat sobre datos funcionará una vez cargues el CSV y apliques filtros.")
+    with tabs[4]:
+        st.info("🔍 La tabla de datos estará disponible tras cargar un CSV.")
+else:
+    # Cargar y preparar datos
     df = load_data(uploaded_file)
     st.sidebar.success("¡Archivo cargado con éxito!")
-    
+
     # Filtros laterales dinámicos
     st.sidebar.subheader("🎯 Filtros Dinámicos")
-    
-    # --- FILTRO 1: INTERVALO DE FECHAS ---
     df_filtered = df.copy()
-    
+
     if "FECHA_ACCIDENTE" in df.columns and not df["FECHA_ACCIDENTE"].dropna().empty:
         min_date = df["FECHA_ACCIDENTE"].min().date()
         max_date = df["FECHA_ACCIDENTE"].max().date()
@@ -218,265 +280,249 @@ if uploaded_file is not None:
             min_value=min_date,
             max_value=max_date
         )
-        
-        # Validación para asegurar que el usuario haya seleccionado ambos extremos (inicio y fin)
         if isinstance(date_range, tuple) and len(date_range) == 2:
             start_date, end_date = date_range
             df_filtered = df_filtered[
                 (df_filtered["FECHA_ACCIDENTE"].dt.date >= start_date) & 
                 (df_filtered["FECHA_ACCIDENTE"].dt.date <= end_date)
             ]
-    
-    # --- FILTRO 2: DEPARTAMENTO ---
+
     deptos = ["Todos"] + list(df_filtered["DEPARTAMENTO_ACCIDENTE"].dropna().unique())
     selected_depto = st.sidebar.selectbox("Departamento:", deptos)
-    
     if selected_depto != "Todos":
         df_filtered = df_filtered[df_filtered["DEPARTAMENTO_ACCIDENTE"] == selected_depto]
 
-    # --- FILTRO 3: GRAVEDAD ---
     gravedades = ["Todas"] + list(df_filtered["GRAVEDAD_ACCIDENTE"].dropna().unique())
     selected_gravedad = st.sidebar.selectbox("Gravedad del Accidente:", gravedades)
-    
     if selected_gravedad != "Todas":
         df_filtered = df_filtered[df_filtered["GRAVEDAD_ACCIDENTE"] == selected_gravedad]
 
-    # Métricas principales (KPIs)
-    col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
-    with col_kpi1:
-        st.metric("Total Registro Accidentes", len(df_filtered))
-    with col_kpi2:
-        st.metric("Marcas Distintas", df_filtered["MARCA_VEHICULO"].nunique())
-    with col_kpi3:
-        st.metric("Tipos de Vehículo", df_filtered["TIPO_VEHICULO"].nunique())
-    with col_kpi4:
-        promedio_edad = round(df_filtered["EDAD_VEHICULO"].mean(), 1) if not df_filtered["EDAD_VEHICULO"].isna().all() else 0
-        st.metric("Edad Promedio Vehículos", f"{promedio_edad} años")
-
-    st.markdown("---")
-
-    # Layout en cuadrícula de 2 columnas para los gráficos
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("1. Top 10 Marca + Tipo de Vehículo")
-        df_double_dim = df_filtered.groupby(["MARCA_VEHICULO", "TIPO_VEHICULO"]).size().reset_index(name="CANTIDAD")
+    # Preparar algunas variables comunes
+    promedio_edad = round(df_filtered["EDAD_VEHICULO"].mean(), 1) if ("EDAD_VEHICULO" in df_filtered.columns and not df_filtered["EDAD_VEHICULO"].isna().all()) else 0
+    df_double_dim = df_filtered.groupby(["MARCA_VEHICULO", "TIPO_VEHICULO"]).size().reset_index(name="CANTIDAD") if all(col in df_filtered.columns for col in ["MARCA_VEHICULO","TIPO_VEHICULO"]) else pd.DataFrame()
+    if not df_double_dim.empty:
         df_double_dim["MARCA_TIPO"] = df_double_dim["MARCA_VEHICULO"] + " - " + df_double_dim["TIPO_VEHICULO"]
         top10_dim = df_double_dim.sort_values(by="CANTIDAD", ascending=False).head(10)
-        
-        fig1 = px.bar(
-            top10_dim,
-            x="CANTIDAD",
-            y="MARCA_TIPO",
-            orientation="h",
-            color="CANTIDAD",
-            color_continuous_scale="Viridis",
-            labels={"MARCA_TIPO": "Marca - Tipo", "CANTIDAD": "N° Accidentes"},
-            text="CANTIDAD"
-        )
-        fig1.update_layout(yaxis={'categoryorder':'total ascending'}, showlegend=False, margin=dict(l=0, r=0, t=30, b=0))
-        st.plotly_chart(fig1, use_container_width=True)
+    else:
+        top10_dim = pd.DataFrame()
 
-    with col2:
-        st.subheader("2. Tipos de Vehículos Más Involucrados")
-        df_tipo = df_filtered["TIPO_VEHICULO"].value_counts().reset_index()
+    df_tipo = df_filtered["TIPO_VEHICULO"].value_counts().reset_index() if "TIPO_VEHICULO" in df_filtered.columns else pd.DataFrame()
+    if not df_tipo.empty:
         df_tipo.columns = ["TIPO_VEHICULO", "CANTIDAD"]
-        
-        fig2 = px.bar(
-            df_tipo,
-            x="TIPO_VEHICULO",
-            y="CANTIDAD",
-            color="TIPO_VEHICULO",
-            labels={"TIPO_VEHICULO": "Tipo de Vehículo", "CANTIDAD": "N° Accidentes"},
-            text="CANTIDAD"
-        )
-        fig2.update_layout(showlegend=False, margin=dict(l=0, r=0, t=30, b=0))
-        st.plotly_chart(fig2, use_container_width=True)
 
-    col3, col4 = st.columns(2)
-
-    with col3:
-        st.subheader("3. Gravedad de los Accidentes")
-        df_gravedad = df_filtered["GRAVEDAD_ACCIDENTE"].value_counts().reset_index()
+    df_gravedad = df_filtered["GRAVEDAD_ACCIDENTE"].value_counts().reset_index() if "GRAVEDAD_ACCIDENTE" in df_filtered.columns else pd.DataFrame()
+    if not df_gravedad.empty:
         df_gravedad.columns = ["GRAVEDAD", "CANTIDAD"]
-        
-        fig3 = px.pie(
-            df_gravedad,
-            names="GRAVEDAD",
-            values="CANTIDAD",
-            hole=0.4,
-            color_discrete_sequence=px.colors.qualitative.Pastel
-        )
-        fig3.update_traces(textinfo='percent+label')
-        fig3.update_layout(margin=dict(l=0, r=0, t=30, b=0))
-        st.plotly_chart(fig3, use_container_width=True)
 
-    with col4:
-        st.subheader("4. Distribución de la Edad de los Vehículos")
-        fig4 = px.histogram(
-            df_filtered.dropna(subset=["EDAD_VEHICULO"]),
-            x="EDAD_VEHICULO",
-            nbins=20,
-            color_discrete_sequence=["#2b5c8f"],
-            labels={"EDAD_VEHICULO": "Edad del Vehículo (Años)", "count": "Frecuencia"}
-        )
-        fig4.update_layout(bargap=0.1, margin=dict(l=0, r=0, t=30, b=0))
-        st.plotly_chart(fig4, use_container_width=True)
+    # Pestaña: Visualizaciones
+    with tabs[1]:
+        st.subheader("KPIs")
+        col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
+        with col_kpi1:
+            st.metric("Total Registro Accidentes", len(df_filtered))
+        with col_kpi2:
+            st.metric("Marcas Distintas", int(df_filtered["MARCA_VEHICULO"].nunique()) if "MARCA_VEHICULO" in df_filtered.columns else 0)
+        with col_kpi3:
+            st.metric("Tipos de Vehículo", int(df_filtered["TIPO_VEHICULO"].nunique()) if "TIPO_VEHICULO" in df_filtered.columns else 0)
+        with col_kpi4:
+            st.metric("Edad Promedio Vehículos", f"{promedio_edad} años")
 
-    st.markdown("---")
-
-    # Sección para el informe generado por IA
-    st.header("🧠 Generación de Informe con IA (Groq)")
-
-    if st.button("🚀 Generar Informe de Insights con Groq"):
-        if not groq_api_key:
-            st.error("Por favor, ingresa tu clave API de Groq en la barra lateral o asegura la variable GROQ_API_KEY.")
-        else:
-            with st.spinner("Procesando datos con el modelo openai/gpt-oss-120b a través de Groq..."):
-                try:
-                    top_marcas_tipos = top10_dim.to_dict(orient="records")
-                    dist_tipos = df_tipo.head(5).to_dict(orient="records")
-                    dist_gravedad = df_gravedad.to_dict(orient="records")
-                    
-                    # Incluimos el rango de fechas actual en la carga útil enviada a la IA
-                    rango_fechas_str = f"{start_date} a {end_date}" if 'start_date' in locals() else "Sin filtro"
-
-                    resumen_payload = {
-                        "rango_fechas_filtro": rango_fechas_str,
-                        "departamento_filtro": selected_depto,
-                        "gravedad_filtro": selected_gravedad,
-                        "total_accidentes": len(df_filtered),
-                        "edad_promedio_vehiculo": promedio_edad,
-                        "top_marca_tipo_accidentes": top_marcas_tipos,
-                        "tipos_vehiculo_frecuentes": dist_tipos,
-                        "distribucion_gravedad": dist_gravedad
-                    }
-                    
-                    informe = generar_informe_groq(groq_api_key, resumen_payload, num_insights)
-                    
-                    st.success("¡Informe generado exitosamente!")
-                    
-                    st.subheader("📌 Resumen Ejecutivo")
-                    st.info(informe.get("resumen_ejecutivo", "No disponible"))
-                    
-                    st.subheader(f"💡 {len(informe.get('insights', []))} Insights Generados")
-                    for item in informe.get("insights", []):
-                        st.markdown(f"""
-                        <div class="report-card">
-                            <h4>#{item.get('id', '')} - {item.get('titulo', '')}</h4>
-                            <p><strong>Hallazgo:</strong> {item.get('hallazgo', '')}</p>
-                            <p><strong>Recomendación:</strong> {item.get('recomendacion', '')}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                except Exception as e:
-                    st.error(f"Error al conectar con la API de Groq: {str(e)}")
-
-    st.markdown("---")
-
-    # ============================================
-    # NUEVA SECCIÓN: CHATBOX INTERACTIVO
-    # ============================================
-    st.header("💬 Chat Interactivo - Interpreta tus Datos")
-    st.markdown("Haz preguntas sobre los datos filtrados y obtén respuestas basadas en IA.")
-
-    # Inicializar historial de chat en session state
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-
-    # Preparar datos de contexto para el chat
-    rango_fechas_str = f"{start_date} a {end_date}" if 'start_date' in locals() else "Sin filtro"
-    
-    top_marcas_tipos = top10_dim.to_dict(orient="records")
-    dist_tipos = df_tipo.head(5).to_dict(orient="records")
-    dist_gravedad = df_gravedad.to_dict(orient="records")
-    
-    datos_contexto = {
-        "rango_fechas_filtro": rango_fechas_str,
-        "departamento_filtro": selected_depto,
-        "gravedad_filtro": selected_gravedad,
-        "total_accidentes": len(df_filtered),
-        "edad_promedio_vehiculo": promedio_edad,
-        "marcas_distintas": df_filtered["MARCA_VEHICULO"].nunique(),
-        "tipos_vehiculo_distintos": df_filtered["TIPO_VEHICULO"].nunique(),
-        "top_marca_tipo_accidentes": top_marcas_tipos,
-        "tipos_vehiculo_frecuentes": dist_tipos,
-        "distribucion_gravedad": dist_gravedad
-    }
-
-    # Mostrar historial de chat
-    chat_container = st.container()
-    
-    with chat_container:
-        for message in st.session_state.chat_history:
-            if message["role"] == "user":
-                st.markdown(f"""
-                <div class="chat-message user">
-                    <div class="chat-message-content">
-                        <strong>Tú:</strong> {message["content"]}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+        st.markdown("---")
+        st.subheader("Visualizaciones")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("1. Top 10 Marca + Tipo de Vehículo")
+            if not top10_dim.empty:
+                fig1 = px.bar(
+                    top10_dim,
+                    x="CANTIDAD",
+                    y="MARCA_TIPO",
+                    orientation="h",
+                    color="CANTIDAD",
+                    color_continuous_scale="Viridis",
+                    labels={"MARCA_TIPO": "Marca - Tipo", "CANTIDAD": "N° Accidentes"},
+                    text="CANTIDAD"
+                )
+                fig1.update_layout(yaxis={'categoryorder':'total ascending'}, showlegend=False, margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig1, use_container_width=True)
             else:
-                st.markdown(f"""
-                <div class="chat-message assistant">
-                    <div class="chat-message-content">
-                        <strong>IA:</strong> {message["content"]}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.info("No hay datos suficientes para mostrar esta gráfica.")
 
-    # Input del usuario
-    col_input, col_button = st.columns([5, 1])
-    
-    with col_input:
-        user_question = st.text_input(
-            "Escribe tu pregunta aquí:",
-            placeholder="Ej: ¿Cuál es la marca de vehículo con más accidentes?",
-            key="user_input"
-        )
-    
-    with col_button:
-        send_button = st.button("📤 Enviar", use_container_width=True)
+        with col2:
+            st.subheader("2. Tipos de Vehículos Más Involucrados")
+            if not df_tipo.empty:
+                fig2 = px.bar(
+                    df_tipo,
+                    x="TIPO_VEHICULO",
+                    y="CANTIDAD",
+                    color="TIPO_VEHICULO",
+                    labels={"TIPO_VEHICULO": "Tipo de Vehículo", "CANTIDAD": "N° Accidentes"},
+                    text="CANTIDAD"
+                )
+                fig2.update_layout(showlegend=False, margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.info("No hay datos para Tipos de Vehículo.")
 
-    # Procesamiento de la pregunta
-    if send_button and user_question.strip():
-        if not groq_api_key:
-            st.error("Por favor, ingresa tu clave API de Groq en la barra lateral para usar el chat.")
-        else:
-            # Agregar pregunta del usuario al historial
-            st.session_state.chat_history.append({
-                "role": "user",
-                "content": user_question
-            })
-            
-            # Generar respuesta con IA
-            with st.spinner("🤔 Analizando tu pregunta..."):
-                try:
-                    respuesta_ia = chat_con_datos(groq_api_key, user_question, datos_contexto)
-                    
-                    # Agregar respuesta al historial
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": respuesta_ia
-                    })
-                    
-                    # Recargar la página para mostrar el nuevo mensaje
-                    st.rerun()
-                    
-                except Exception as e:
-                    st.error(f"Error al procesar tu pregunta: {str(e)}")
-    
-    # Botón para limpiar chat
-    if st.session_state.chat_history:
-        if st.button("🗑️ Limpiar Historial de Chat"):
+        col3, col4 = st.columns(2)
+        with col3:
+            st.subheader("3. Gravedad de los Accidentes")
+            if not df_gravedad.empty:
+                fig3 = px.pie(
+                    df_gravedad,
+                    names="GRAVEDAD",
+                    values="CANTIDAD",
+                    hole=0.4,
+                    color_discrete_sequence=px.colors.qualitative.Pastel
+                )
+                fig3.update_traces(textinfo='percent+label')
+                fig3.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig3, use_container_width=True)
+            else:
+                st.info("No hay datos de gravedad para mostrar.")
+
+        with col4:
+            st.subheader("4. Distribución de la Edad de los Vehículos")
+            if "EDAD_VEHICULO" in df_filtered.columns and not df_filtered["EDAD_VEHICULO"].dropna().empty:
+                fig4 = px.histogram(
+                    df_filtered.dropna(subset=["EDAD_VEHICULO"]),
+                    x="EDAD_VEHICULO",
+                    nbins=20,
+                    color_discrete_sequence=["#2b5c8f"],
+                    labels={"EDAD_VEHICULO": "Edad del Vehículo (Años)", "count": "Frecuencia"}
+                )
+                fig4.update_layout(bargap=0.1, margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig4, use_container_width=True)
+            else:
+                st.info("No hay datos de edad del vehículo.")
+
+    # Pestaña: IA - Insights
+    with tabs[2]:
+        st.header("🧠 Generación de Informe con IA (Groq)")
+        if st.button("🚀 Generar Informe de Insights con Groq"):
+            if not groq_api_key:
+                st.error("Por favor, ingresa tu clave API de Groq en la barra lateral o asegura la variable GROQ_API_KEY.")
+            else:
+                with st.spinner("Procesando datos con el modelo openai/gpt-oss-120b a través de Groq..."):
+                    try:
+                        top_marcas_tipos = top10_dim.to_dict(orient="records") if not top10_dim.empty else []
+                        dist_tipos = df_tipo.head(5).to_dict(orient="records") if not df_tipo.empty else []
+                        dist_gravedad = df_gravedad.to_dict(orient="records") if not df_gravedad.empty else []
+                        rango_fechas_str = f"{start_date} a {end_date}" if 'start_date' in locals() else "Sin filtro"
+
+                        resumen_payload = {
+                            "rango_fechas_filtro": rango_fechas_str,
+                            "departamento_filtro": selected_depto,
+                            "gravedad_filtro": selected_gravedad,
+                            "total_accidentes": len(df_filtered),
+                            "edad_promedio_vehiculo": promedio_edad,
+                            "top_marca_tipo_accidentes": top_marcas_tipos,
+                            "tipos_vehiculo_frecuentes": dist_tipos,
+                            "distribucion_gravedad": dist_gravedad
+                        }
+
+                        informe = generar_informe_groq(groq_api_key, resumen_payload, num_insights)
+
+                        st.success("¡Informe generado exitosamente!")
+                        st.subheader("📌 Resumen Ejecutivo")
+                        st.info(informe.get("resumen_ejecutivo", "No disponible"))
+
+                        st.subheader(f"💡 {len(informe.get('insights', []))} Insights Generados")
+                        for item in informe.get("insights", []):
+                            st.markdown(f"""
+                            <div class="report-card">
+                                <h4>#{item.get('id', '')} - {item.get('titulo', '')}</h4>
+                                <p><strong>Hallazgo:</strong> {item.get('hallazgo', '')}</p>
+                                <p><strong>Recomendación:</strong> {item.get('recomendacion', '')}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                    except Exception as e:
+                        st.error(f"Error al conectar con la API de Groq: {str(e)}")
+
+    # Pestaña: Chat
+    with tabs[3]:
+        st.header("💬 Chat Interactivo - Interpreta tus Datos")
+        st.markdown("Haz preguntas sobre los datos filtrados y obtén respuestas basadas en IA.")
+
+        # Inicializar historial de chat en session state
+        if "chat_history" not in st.session_state:
             st.session_state.chat_history = []
-            st.rerun()
 
-    st.markdown("---")
+        rango_fechas_str = f"{start_date} a {end_date}" if 'start_date' in locals() else "Sin filtro"
+        top_marcas_tipos = top10_dim.to_dict(orient="records") if not top10_dim.empty else []
+        dist_tipos = df_tipo.head(5).to_dict(orient="records") if not df_tipo.empty else []
+        dist_gravedad = df_gravedad.to_dict(orient="records") if not df_gravedad.empty else []
 
-    with st.expander("🔍 Ver datos filtrados en tabla"):
-        st.dataframe(df_filtered, use_container_width=True)
+        datos_contexto = {
+            "rango_fechas_filtro": rango_fechas_str,
+            "departamento_filtro": selected_depto,
+            "gravedad_filtro": selected_gravedad,
+            "total_accidentes": len(df_filtered),
+            "edad_promedio_vehiculo": promedio_edad,
+            "marcas_distintas": int(df_filtered["MARCA_VEHICULO"].nunique()) if "MARCA_VEHICULO" in df_filtered.columns else 0,
+            "tipos_vehiculo_distintos": int(df_filtered["TIPO_VEHICULO"].nunique()) if "TIPO_VEHICULO" in df_filtered.columns else 0,
+            "top_marca_tipo_accidentes": top_marcas_tipos,
+            "tipos_vehiculo_frecuentes": dist_tipos,
+            "distribucion_gravedad": dist_gravedad
+        }
 
-else:
-    st.info("👋 Por favor, carga tu archivo CSV en la barra lateral izquierda para activar el dashboard.")
+        # Mostrar historial de chat
+        chat_container = st.container()
+        with chat_container:
+            for message in st.session_state.chat_history:
+                if message["role"] == "user":
+                    st.markdown(f"""
+                    <div class="chat-message user">
+                        <div class="chat-message-content">
+                            <strong>Tú:</strong> {message["content"]}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div class="chat-message assistant">
+                        <div class="chat-message-content">
+                            <strong>IA:</strong> {message["content"]}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        # Input del usuario
+        col_input, col_button = st.columns([5, 1])
+        with col_input:
+            user_question = st.text_input(
+                "Escribe tu pregunta aquí:",
+                placeholder="Ej: ¿Cuál es la marca de vehículo con más accidentes?",
+                key="user_input"
+            )
+        with col_button:
+            send_button = st.button("📤 Enviar", use_container_width=True)
+
+        if send_button and user_question.strip():
+            if not groq_api_key:
+                st.error("Por favor, ingresa tu clave API de Groq en la barra lateral para usar el chat.")
+            else:
+                st.session_state.chat_history.append({"role": "user", "content": user_question})
+                with st.spinner("🤔 Analizando tu pregunta..."):
+                    try:
+                        respuesta_ia = chat_con_datos(groq_api_key, user_question, datos_contexto)
+                        st.session_state.chat_history.append({"role": "assistant", "content": respuesta_ia})
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al procesar tu pregunta: {str(e)}")
+
+        if st.session_state.chat_history:
+            if st.button("🗑️ Limpiar Historial de Chat"):
+                st.session_state.chat_history = []
+                st.rerun()
+
+    # Pestaña: Tabla de Datos
+    with tabs[4]:
+        st.header("🔍 Datos Filtrados")
+        with st.expander("Ver datos filtrados en tabla"):
+            st.dataframe(df_filtered, use_container_width=True)
+
+# Footer / nota cuando no hay archivo (la pestaña Presentación queda disponible siempre)
+if uploaded_file is None:
+    st.sidebar.info("👋 Sube un CSV para activar las demás pestañas.")
