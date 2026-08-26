@@ -113,7 +113,7 @@ uploaded_file = st.sidebar.file_uploader("Carga tu archivo CSV aquí", type=["cs
 
 st.sidebar.header("🤖 Configuración de IA (Groq)")
 groq_api_key_input = st.sidebar.text_input("Groq API Key", type="password", help="Obtén tu API Key en https://console.groq.com/")
-groq_api_key = groq_api_key_input or os.environ.get("GROQ_API_KEY", "")
+groq_api_key = groq_api_key_input or os.environ.get("GROQ_API_KEY", "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")
 
 num_insights = st.sidebar.slider("Número de Insights a generar:", min_value=1, max_value=10, value=3)
 
