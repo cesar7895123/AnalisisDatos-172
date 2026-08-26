@@ -92,17 +92,17 @@ if "project_info" not in st.session_state:
         st.session_state.project_info = {
             "project_name": file_info.get("project_name", "Dashboard Analítico de Accidentes de Tránsito + IA (Groq)"),
             "team_members": file_info.get("team_members", "Dora Milena Ocampo\nElena Rodriguez\nCesar Bedoya"),
-            "project_description": file_info.get("project_description", ""),
-            "problem_statement": file_info.get("problem_statement", ""),
-            "technologies": file_info.get("technologies", ["Python", "Streamlit", "Pandas", "Plotly"]) 
+            "project_description": file_info.get("project_description", "Tradicionalmente, los datos se presentan en tablas o gráficas estáticas que requieren mucho tiempo de lectura manual para extraer conclusiones o patrones claros de fatalidad"),
+            "problem_statement": file_info.get("problem_statement", "La dificultad para analizar e interpretar grandes volúmenes de datos sobre siniestralidad vial en Colombia de manera ágil\n\nAudientes:\n• Analistas de tránsito\n• Autoridades públicas\n• Planificadores urbanos\n• Investigadores y entidades dedicadas a la prevención de accidentes y seguridad vial\n\nContexto:\n• Los accidentes viales fatales representan un problema crítico de salud pública\n• Reducir el tiempo de análisis mediante la automatización de diagnósticos permite diseñar políticas públicas e intervenciones de seguridad basadas en datos en cuestión de minutos, ayudando a salvar vidas."),
+            "technologies": file_info.get("technologies", ["Python", "Streamlit", "Pandas", "Plotly", "Groq", "Google Colab", "Gemini", "GitHub"]) 
         }
     else:
         st.session_state.project_info = {
             "project_name": "Dashboard Analítico de Accidentes de Tránsito + IA (Groq)",
             "team_members": "Dora Milena Ocampo\nElena Rodriguez\nCesar Bedoya",
-            "project_description": "",
-            "problem_statement": "",
-            "technologies": ["Python", "Streamlit", "Pandas", "Plotly"]
+            "project_description": "Tradicionalmente, los datos se presentan en tablas o gráficas estáticas que requieren mucho tiempo de lectura manual para extraer conclusiones o patrones claros de fatalidad",
+            "problem_statement": "La dificultad para analizar e interpretar grandes volúmenes de datos sobre siniestralidad vial en Colombia de manera ágil\n\nAudientes:\n• Analistas de tránsito\n• Autoridades públicas\n• Planificadores urbanos\n• Investigadores y entidades dedicadas a la prevención de accidentes y seguridad vial\n\nContexto:\n• Los accidentes viales fatales representan un problema crítico de salud pública\n• Reducir el tiempo de análisis mediante la automatización de diagnósticos permite diseñar políticas públicas e intervenciones de seguridad basadas en datos en cuestión de minutos, ayudando a salvar vidas.",
+            "technologies": ["Python", "Streamlit", "Pandas", "Plotly", "Groq", "Google Colab", "Gemini", "GitHub"]
         }
 
 # Note: Project info input fields have been intentionally removed to hide the options requested.
@@ -221,13 +221,13 @@ with tabs[0]:
     <div class="presentation-card">
       <h1>📌 {st.session_state.project_info.get('project_name')}</h1>
       <h4>👥 Integrantes</h4>
-      <p>{st.session_state.project_info.get('team_members', 'No especificado').replace('\n','<br>')}</p>
+      <p>{st.session_state.project_info.get('team_members', 'No especificado').replace(chr(10),'<br>')}</p>
       <hr>
       <h4>📝 Descripción general</h4>
       <p>{st.session_state.project_info.get('project_description', 'No especificado')}</p>
       <hr>
       <h4>🎯 Problema que resuelve</h4>
-      <p>{st.session_state.project_info.get('problem_statement', 'No especificado')}</p>
+      <p>{st.session_state.project_info.get('problem_statement', 'No especificado').replace(chr(10),'<br>')}</p>
       <hr>
       <h4>🛠️ Tecnologías utilizadas</h4>
       <p>{', '.join(st.session_state.project_info.get('technologies', []))}</p>
