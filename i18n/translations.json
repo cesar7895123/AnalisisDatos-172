@@ -14,7 +14,8 @@
       "department": "Departamento:",
       "accident_severity": "Gravedad del Accidente:",
       "file_loaded_success": "¡Archivo cargado con éxito!",
-      "upload_hint": "👋 Sube un CSV para activar las demás pestañas."
+      "upload_hint": "👋 Sube un CSV para activar las demás pestañas.",
+      "language": "🌐 Idioma / Language"
     },
     "tabs": {
       "presentation": "Presentación",
@@ -106,7 +107,13 @@
       "generate_projection": "🚀 Generar Proyección de Utilidad",
       "no_groq_key": "Se requiere API Key de Groq para generar recomendaciones automáticas.",
       "generating_recommendations": "Generando recomendaciones estratégicas...",
-      "year": "Año"
+      "year": "Año",
+      "vehicle_type": "Tipo Vehículo",
+      "accident_rate": "Tasa Accidentalidad (%)",
+      "annual_premium": "Prima Anual",
+      "profit_per_policy": "Utilidad por Póliza",
+      "total_profit_estimated": "Utilidad Total Estimada",
+      "monthly_profit_est": "Utilidad Mensual"
     }
   },
   "en": {
@@ -124,7 +131,8 @@
       "department": "Department:",
       "accident_severity": "Accident Severity:",
       "file_loaded_success": "File loaded successfully!",
-      "upload_hint": "👋 Upload a CSV to activate the other tabs."
+      "upload_hint": "👋 Upload a CSV to activate the other tabs.",
+      "language": "🌐 Idioma / Language"
     },
     "tabs": {
       "presentation": "Presentation",
@@ -216,7 +224,13 @@
       "generate_projection": "🚀 Generate Profit Projection",
       "no_groq_key": "Groq API Key required to generate automatic recommendations.",
       "generating_recommendations": "Generating strategic recommendations...",
-      "year": "Year"
+      "year": "Year",
+      "vehicle_type": "Vehicle Type",
+      "accident_rate": "Accident Rate (%)",
+      "annual_premium": "Annual Premium",
+      "profit_per_policy": "Profit per Policy",
+      "total_profit_estimated": "Total Estimated Profit",
+      "monthly_profit_est": "Monthly Profit"
     }
   }
 }
